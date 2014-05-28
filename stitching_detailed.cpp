@@ -57,6 +57,8 @@
 #include "opencv2/stitching/detail/warpers.hpp"
 #include "opencv2/stitching/warpers.hpp"
 
+#include "rotMatrixToQuternion.h"
+
 using namespace std;
 using namespace cv;
 using namespace cv::detail;
@@ -534,6 +536,7 @@ int main(int argc, char* argv[])
 		f << matchesGraphAsStringPowerUpVer(img_names, pairwise_matches, conf_thresh,span_tree_edges);
 
 	    //draw mathes
+		ofstream writeHomography("homographyRecord.txt");
 	    int id_of_pair=0;
 	    for(set<pair<int,int>>::iterator edgesit=span_tree_edges.begin();edgesit!=span_tree_edges.end();++edgesit)
     	{
@@ -550,6 +553,18 @@ int main(int argc, char* argv[])
 	    		maskwithsign.push_back(*it);
 	    	drawMatches(need4drawmatch[i],features[i].keypoints,need4drawmatch[j],features[j].keypoints,pairwise_matches[k].matches,comeonbaby,Scalar(0,255,0),Scalar(255,0,0),maskwithsign);
 		    imwrite("match"+str+".jpg",comeonbaby);
+			Mat showHomography(pairwise_matches[k].H);
+			writeHomography<<"Homography matrix which transfers pic "<<i<<" to pic "<<j<<" is:"<<endl;
+			for(int a=0;a!=3;++a)
+			{
+				for(int b=0;b!=3;++b)
+				{
+					double fairlybaby=showHomography.at<double>(a,b);
+					writeHomography<<fairlybaby<<" ";
+				}
+				writeHomography<<endl;
+			}
+
 	    }
     }
 
@@ -605,6 +620,36 @@ int main(int argc, char* argv[])
         LOGLN("Initial intrinsics #" << indices[i]+1 << ":\n" << cameras[i].K());
 		writedown<<"Initial intrinsics #" << indices[i]+1 << ":\n" << cameras[i].K()<<endl;
     }
+
+	//write camParams
+	ofstream writeCamParams("cams.txt");
+	ofstream writePtsParams("pts.txt");
+	writeCamParams<<"# fu, u0, v0, ar, s   quaternion translation"<<endl;
+	for (int i=0;i<num_images;++i)
+	{
+		int aspect=1;
+		writeCamParams<<cameras[i].focal<<" "<<cameras[i].ppx<<" "<<cameras[i].ppy<<" "<<aspect<<" 0 ";
+		
+		//write rotations
+		rotMatrix rotationMat;
+		rotationMat.m11=cameras[i].R.at<double>(0,0);
+		rotationMat.m12=cameras[i].R.at<double>(0,1);
+		rotationMat.m13=cameras[i].R.at<double>(0,2);
+		rotationMat.m21=cameras[i].R.at<double>(1,0);
+		rotationMat.m22=cameras[i].R.at<double>(1,1);
+		rotationMat.m23=cameras[i].R.at<double>(1,2);
+		rotationMat.m31=cameras[i].R.at<double>(2,0);
+		rotationMat.m32=cameras[i].R.at<double>(2,1);
+		rotationMat.m33=cameras[i].R.at<double>(2,2);
+		Quaternion rotationQua;
+		rotMatrixToQuternion(rotationQua,rotationMat);
+		writeCamParams<<rotationQua.x<<" "<<rotationQua.y<<" "<<rotationQua.z<<" "<<rotationQua.w<<" ";
+
+		//write translation
+		writeCamParams<<cameras[i].t.at<double>(0)<<" "<<cameras[i].t.at<double>(1)<<" "<<cameras[i].t.at<double>(2)<<endl;
+	}
+
+	
 
     Ptr<detail::BundleAdjusterBase> adjuster;
     if (ba_cost_func == "reproj") adjuster = new detail::BundleAdjusterReproj();

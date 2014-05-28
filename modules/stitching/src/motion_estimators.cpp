@@ -102,6 +102,7 @@ void calcDeriv(const Mat &err1, const Mat &err2, double h, Mat res)
 
 namespace cv {
 	ofstream debug("debug1.txt");
+
 namespace detail {
 
 void HomographyBasedEstimator::estimate(const vector<ImageFeatures> &features, const vector<MatchesInfo> &pairwise_matches,
@@ -165,6 +166,7 @@ void HomographyBasedEstimator::estimate(const vector<ImageFeatures> &features, c
         cameras[i].ppx += 0.5 * features[i].img_size.width;
         cameras[i].ppy += 0.5 * features[i].img_size.height;
     }
+
 
     LOGLN("Estimating rotations, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
 }
