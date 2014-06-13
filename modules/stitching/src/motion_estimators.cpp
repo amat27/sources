@@ -364,7 +364,7 @@ void BundleAdjusterReproj::obtainRefinedCameraParams(vector<CameraParams> &camer
 
 void BundleAdjusterReproj::calcError(Mat &err)
 {
-    err.create(total_num_matches_ * 2, 1, CV_64F);
+    err.create(total_num_matches_ * 2, 1, CV_64F);//change from 2
 
     int match_idx = 0;
     for (size_t edge_idx = 0; edge_idx < edges_.size(); ++edge_idx)
@@ -407,9 +407,10 @@ void BundleAdjusterReproj::calcError(Mat &err)
         K2(0,0) = f2; K2(0,2) = ppx2;
         K2(1,1) = f2*a2; K2(1,2) = ppy2;
 
-        Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
-
-        for (size_t k = 0; k < matches_info.matches.size(); ++k)
+#if 0
+		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
+		
+		for (size_t k = 0; k < matches_info.matches.size(); ++k)
         {
             if (!matches_info.inliers_mask[k])
                 continue;
@@ -423,7 +424,69 @@ void BundleAdjusterReproj::calcError(Mat &err)
 
             err.at<double>(2 * match_idx, 0) = p2.x - x/z;
             err.at<double>(2 * match_idx + 1, 0) = p2.y - y/z;
+
+#else
+		Mat_<double> H1 = R1_ * K1.inv();
+		Mat_<double> H2 = R2_ * K2.inv();
+		
+		for (size_t k = 0; k < matches_info.matches.size(); ++k)
+        {
+            if (!matches_info.inliers_mask[k])
+                continue;
+
+            const DMatch& m = matches_info.matches[k];
+            Point2f p1 = features1.keypoints[m.queryIdx].pt;
+            Point2f p2 = features2.keypoints[m.trainIdx].pt;
+
+            double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
+            double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
+            double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
+
+			double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
+            double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
+			double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
+
+			double mult= sqrt (f1 * f2);
+			//double mult = mult1;//(6000>mult1? 6000:mult1);
+            err.at<double>(2 * match_idx, 0) = mult *( x2/z2 - x1/z1)*( x2/z2 - x1/z1);
+            err.at<double>(2 * match_idx + 1, 0) = mult *(y2/z2 - y1/z1)*(y2/z2 - y1/z1);
+
+
+//#else
+//		Mat_<double> H1 = R1_ * K1.inv();
+//        Mat_<double> H2 = R2_ * K2.inv();
+//
+//        for (size_t k = 0; k < matches_info.matches.size(); ++k)
+//        {
+//            if (!matches_info.inliers_mask[k])
+//                continue;
+//
+//            const DMatch& m = matches_info.matches[k];
+//
+//            Point2f p1 = features1.keypoints[m.queryIdx].pt;
+//            double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
+//            double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
+//            double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
+//            double len1 = sqrt(x1*x1 + y1*y1 + z1*z1);
+//            x1 /= len1; y1 /= len1; z1 /= len1;
+//
+//            Point2f p2 = features2.keypoints[m.trainIdx].pt;
+//            double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
+//            double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
+//            double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
+//            double len2 = sqrt(x2*x2 + y2*y2 + z2*z2);
+//            x2 /= len2; y2 /= len2; z2 /= len2;
+//
+//			double mult = sqrt(std::abs((len1 * len2)));
+//            err.at<double>(3 * match_idx, 0) = mult * (x1 - x2);
+//            err.at<double>(3 * match_idx + 1, 0) = mult * (y1 - y2);
+//            err.at<double>(3 * match_idx + 2, 0) = mult * (z1 - z2);
+
+#endif
             match_idx++;
+
+
+
         }
     }
 }
@@ -431,7 +494,7 @@ void BundleAdjusterReproj::calcError(Mat &err)
 
 void BundleAdjusterReproj::calcJacobian(Mat &jac)
 {
-    jac.create(total_num_matches_ * 2, num_images_ * 7, CV_64F);
+    jac.create(total_num_matches_ * 2, num_images_ * 7, CV_64F);//change from 2
     jac.setTo(0);
 
     double val;
@@ -600,10 +663,13 @@ void BundleAdjusterRay::calcError(Mat &err)
             len = sqrt(x2*x2 + y2*y2 + z2*z2);
             x2 /= len; y2 /= len; z2 /= len;
 
-            double mult = sqrt(f1 * f2);
-            err.at<double>(3 * match_idx, 0) = mult * (x1 - x2);
-            err.at<double>(3 * match_idx + 1, 0) = mult * (y1 - y2);
-            err.at<double>(3 * match_idx + 2, 0) = mult * (z1 - z2);
+            
+			
+			double mult = sqrt(f1 * f2);			
+			//double mult = (6000>mult1? 6000:mult1);
+            err.at<double>(3 * match_idx, 0) = mult * (x1 - x2) * (x1 - x2);
+            err.at<double>(3 * match_idx + 1, 0) = mult * (y1 - y2) * (y1 - y2);
+            err.at<double>(3 * match_idx + 2, 0) = mult * (z1 - z2) * (z1 - z2);
 
             match_idx++;
         }

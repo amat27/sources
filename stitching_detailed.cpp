@@ -57,82 +57,26 @@
 #include "opencv2/stitching/detail/warpers.hpp"
 #include "opencv2/stitching/warpers.hpp"
 
+//headfile for using sba functions
+#include <sba.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#include <sba.h>
+#include "compiler.h"
+#include "demo/eucsbademo.h"
+#include "demo/readparams.h"
+
 #include "rotMatrixToQuternion.h"
+#include "debugFunctions.h"
 
 using namespace std;
 using namespace cv;
 using namespace cv::detail;
 
-//record matches graph
-string matchesGraphAsStringPowerUpVer(vector<string> &pathes, vector<MatchesInfo> &pairwise_matches,
-                                float conf_threshold,set<pair<int,int> > &span_tree_edges)
-{
-	stringstream str;
-    str << "graph matches_graph{\n";
 
-    const int num_images = static_cast<int>(pathes.size());
-    
-    DisjointSets comps(num_images);
-
-	    for (int i = 0; i < num_images; ++i)
-    {
-        for (int j = i; j < num_images; ++j)
-        {
-            if (pairwise_matches[i*num_images + j].confidence < conf_threshold)
-                continue;
-            int comp1 = comps.findSetByElem(i);
-            int comp2 = comps.findSetByElem(j);
-            //if (comp1 != comp2)
-            {
-                comps.mergeSets(comp1, comp2);
-                span_tree_edges.insert(make_pair(i, j));
-            }
-			        }
-    }
-	    
-		int id_of_pair=0;
-		for (set<pair<int,int> >::const_iterator itr = span_tree_edges.begin();
-         itr != span_tree_edges.end(); ++itr)
-    {
-		
-		++id_of_pair;
-        pair<int,int> edge = *itr;
-        if (span_tree_edges.find(edge) != span_tree_edges.end())
-        {
-            string name_src = pathes[edge.first];
-            size_t prefix_len = name_src.find_last_of("/\\");
-            if (prefix_len != string::npos) prefix_len++; else prefix_len = 0;
-            name_src = name_src.substr(prefix_len, name_src.size() - prefix_len);
-
-            string name_dst = pathes[edge.second];
-            prefix_len = name_dst.find_last_of("/\\");
-            if (prefix_len != string::npos) prefix_len++; else prefix_len = 0;
-            name_dst = name_dst.substr(prefix_len, name_dst.size() - prefix_len);
-
-            int pos = edge.first*num_images + edge.second;
-			str <<"No.:"<<id_of_pair
-				<< "\"" << name_src << "\" -- \"" << name_dst << "\""
-                << "[label=\"Nm=" << pairwise_matches[pos].matches.size()
-                << ", Ni=" << pairwise_matches[pos].num_inliers
-                << ", C=" << pairwise_matches[pos].confidence << "\"];\n";
-			}
-    }
-
-    for (size_t i = 0; i < comps.size.size(); ++i)
-    {
-        if (comps.size[comps.findSetByElem((int)i)] == 1)
-        {
-            string name = pathes[i];
-            size_t prefix_len = name.find_last_of("/\\");
-            if (prefix_len != string::npos) prefix_len++; else prefix_len = 0;
-            name = name.substr(prefix_len, name.size() - prefix_len);
-            str << "\"" << name << "\";\n";
-        }
-    }
-
-    str << "}";
-    return str.str();
-}
 
 static void printUsage()
 {
@@ -208,12 +152,12 @@ string ba_cost_func = "reproj";
 //<fx><skew><ppx><aspect><ppy>. The default mask is 'xxxxx'. If bundle
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
-string ba_refine_mask = "x_x_x";
+string ba_refine_mask = "x____";
 int baittimes = 200;
-double bathresh = 1e-7; //should be DBL_EPSILON
-bool do_wave_correct = false;
+double bathresh = DBL_EPSILON; //should be DBL_EPSILON
+bool do_wave_correct = 0;
 WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
-bool save_graph = true;
+bool save_graph = 0;
 std::string save_graph_to = "matchp.txt";
 string warp_type = "plane";
 int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
@@ -222,6 +166,7 @@ string seam_find_type = "gc_color";
 int blend_type = Blender::MULTI_BAND;
 float blend_strength = 5;
 string result_name = "result.jpg";
+bool draw_matchs = 0;
 
 ofstream writedown("output.txt");
 set<pair<int,int> > span_tree_edges;
@@ -528,14 +473,18 @@ int main(int argc, char* argv[])
 	writedown<<"Pairwise matching, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec"<<endl;
 
     // Check if we should save matches graph
-    if (save_graph)
-    {
+    
+    
 		LOGLN("Saving matches graph...");
 		writedown<<"Saving matches graph..."<<endl;
-        ofstream f(save_graph_to.c_str());
-		f << matchesGraphAsStringPowerUpVer(img_names, pairwise_matches, conf_thresh,span_tree_edges);
+		if (1)
+		{
+			ofstream f(save_graph_to.c_str());
+			f << matchesGraphAsStringPowerUpVer(img_names, pairwise_matches, conf_thresh,span_tree_edges);
+		}
 
-	    //draw mathes
+	    //draw mathes and push numpts3D
+		int numpts3D=0;/* number of points */
 		ofstream writeHomography("homographyRecord.txt");
 	    int id_of_pair=0;
 	    for(set<pair<int,int>>::iterator edgesit=span_tree_edges.begin();edgesit!=span_tree_edges.end();++edgesit)
@@ -544,30 +493,34 @@ int main(int argc, char* argv[])
 	    	int i=(*edgesit).first;
 	    	int j=(*edgesit).second;
 	    	int k=i*num_images+j;
-	    	stringstream s;
-	    	s << id_of_pair;
-	    	string str = s.str();
-	    	Mat comeonbaby;
-	    	vector<char> maskwithsign;
-	    	for(vector<uchar>::iterator it=pairwise_matches[k].inliers_mask.begin();it!=pairwise_matches[k].inliers_mask.end() && !isspace(*it);++it)
-	    		maskwithsign.push_back(*it);
-	    	drawMatches(need4drawmatch[i],features[i].keypoints,need4drawmatch[j],features[j].keypoints,pairwise_matches[k].matches,comeonbaby,Scalar(0,255,0),Scalar(255,0,0),maskwithsign);
-		    imwrite("match"+str+".jpg",comeonbaby);
-			Mat showHomography(pairwise_matches[k].H);
-			writeHomography<<"Homography matrix which transfers pic "<<i<<" to pic "<<j<<" is:"<<endl;
-			for(int a=0;a!=3;++a)
-			{
-				for(int b=0;b!=3;++b)
-				{
-					double fairlybaby=showHomography.at<double>(a,b);
-					writeHomography<<fairlybaby<<" ";
-				}
-				writeHomography<<endl;
+			numpts3D += pairwise_matches[k].num_inliers;
+			cout<<numpts3D<<" ";
+			if(draw_matchs){
+				stringstream s;
+	    		s << id_of_pair;
+	    	    string str = s.str();
+	    	    Mat comeonbaby;
+	    	    vector<char> maskwithsign;
+	    	    for(vector<uchar>::iterator it=pairwise_matches[k].inliers_mask.begin();it!=pairwise_matches[k].inliers_mask.end() && !isspace(*it);++it)
+	    		    maskwithsign.push_back(*it);
+	    	    drawMatches(need4drawmatch[i],features[i].keypoints,need4drawmatch[j],features[j].keypoints,pairwise_matches[k].matches,comeonbaby,Scalar(0,255,0),Scalar(255,0,0),maskwithsign);
+		        imwrite("match"+str+".jpg",comeonbaby);
+			    Mat showHomography(pairwise_matches[k].H);
+			    writeHomography<<"Homography matrix which transfers pic "<<i<<" to pic "<<j<<" is:"<<endl;
+			    for(int a=0;a!=3;++a)
+			    {
+				    for(int b=0;b!=3;++b)
+				    {
+					    double fairlybaby=showHomography.at<double>(a,b);
+					    writeHomography<<fairlybaby<<" ";
+				    }
+				    writeHomography<<endl;
+			    }
 			}
 
 	    }
-    }
-
+    
+	
     // Leave only images we are sure are from the same panorama
     vector<int> indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
     vector<Mat> img_subset;
@@ -621,36 +574,44 @@ int main(int argc, char* argv[])
 		writedown<<"Initial intrinsics #" << indices[i]+1 << ":\n" << cameras[i].K()<<endl;
     }
 
-	//write camParams
-	ofstream writeCamParams("cams.txt");
-	ofstream writePtsParams("pts.txt");
-	writeCamParams<<"# fu, u0, v0, ar, s   quaternion translation"<<endl;
-	for (int i=0;i<num_images;++i)
-	{
-		int aspect=1;
-		writeCamParams<<cameras[i].focal<<" "<<cameras[i].ppx<<" "<<cameras[i].ppy<<" "<<aspect<<" 0 ";
-		
-		//write rotations
-		rotMatrix rotationMat;
-		rotationMat.m11=cameras[i].R.at<double>(0,0);
-		rotationMat.m12=cameras[i].R.at<double>(0,1);
-		rotationMat.m13=cameras[i].R.at<double>(0,2);
-		rotationMat.m21=cameras[i].R.at<double>(1,0);
-		rotationMat.m22=cameras[i].R.at<double>(1,1);
-		rotationMat.m23=cameras[i].R.at<double>(1,2);
-		rotationMat.m31=cameras[i].R.at<double>(2,0);
-		rotationMat.m32=cameras[i].R.at<double>(2,1);
-		rotationMat.m33=cameras[i].R.at<double>(2,2);
-		Quaternion rotationQua;
-		rotMatrixToQuternion(rotationQua,rotationMat);
-		writeCamParams<<rotationQua.x<<" "<<rotationQua.y<<" "<<rotationQua.z<<" "<<rotationQua.w<<" ";
+	////write camParams
+	//ofstream writeCamParams("cams.txt");
+	//ofstream writePtsParams("pts.txt");
+	//writeCamParams<<"# fu, u0, v0, ar, s   quaternion translation"<<endl;
+	//for (int i=0;i<num_images;++i)
+	//{
+	//	int aspect=1;
+	//	writeCamParams<<cameras[i].focal<<" "<<cameras[i].ppx<<" "<<cameras[i].ppy<<" "<<aspect<<" 0 ";
+	//	
+	//	//write rotations
+	//	rotMatrix rotationMat; 
+	//	rotationMat.m11=cameras[i].R.at<double>(0,0);
+	//	rotationMat.m12=cameras[i].R.at<double>(0,1);
+	//	rotationMat.m13=cameras[i].R.at<double>(0,2);
+	//	rotationMat.m21=cameras[i].R.at<double>(1,0);
+	//	rotationMat.m22=cameras[i].R.at<double>(1,1);
+	//	rotationMat.m23=cameras[i].R.at<double>(1,2);
+	//	rotationMat.m31=cameras[i].R.at<double>(2,0);
+	//	rotationMat.m32=cameras[i].R.at<double>(2,1);
+	//	rotationMat.m33=cameras[i].R.at<double>(2,2);
+	//	Quaternion rotationQua;
+	//	rotMatrixToQuternion(rotationQua,rotationMat);
+	//	writeCamParams<<rotationQua.x<<" "<<rotationQua.y<<" "<<rotationQua.z<<" "<<rotationQua.w<<" ";
 
-		//write translation
-		writeCamParams<<cameras[i].t.at<double>(0)<<" "<<cameras[i].t.at<double>(1)<<" "<<cameras[i].t.at<double>(2)<<endl;
-	}
+	//	//write translation
+	//	writeCamParams<<cameras[i].t.at<double>(0)<<" "<<cameras[i].t.at<double>(1)<<" "<<cameras[i].t.at<double>(2)<<endl;
+	//}
 
 	
+	{
+		string writeName="cams.txt";
+		writeCamParams(writeName,num_images,cameras);
+	}
 
+#if 0
+	//int n=sba_mot_levmar_x(numpts3D,0,num_images,0,;
+
+#else
     Ptr<detail::BundleAdjusterBase> adjuster;
     if (ba_cost_func == "reproj") adjuster = new detail::BundleAdjusterReproj();
     else if (ba_cost_func == "ray") adjuster = new detail::BundleAdjusterRay();
@@ -669,6 +630,16 @@ int main(int argc, char* argv[])
     if (ba_refine_mask[4] == 'x') refine_mask(1,2) = 1;
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
+
+
+
+	{
+		string writeName="cams1.txt";
+		writeCamParams(writeName,num_images,cameras);
+	}
+
+
+#endif
 
     // Find median focal length
 
@@ -772,10 +743,10 @@ int main(int argc, char* argv[])
     for (int i = 0; i < num_images; ++i)
 	{
         images_warped[i].convertTo(images_warped_f[i], CV_32F);
-		stringstream s;
+		/*stringstream s;
 		s << i;
 		string str = s.str();
-		imwrite("warpedf"+str+".jpg",images_warped_f[i]);
+		imwrite("warpedf"+str+".jpg",images_warped_f[i]);*/
 	}
 
     LOGLN("Warping images, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");

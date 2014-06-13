@@ -1,3 +1,6 @@
+#ifndef rotMat
+#define rotMat
+
 #include <math.h>
 #include <iostream>
 
@@ -17,7 +20,6 @@ struct rotMatrix
 };
 
 
-//fuction:旋转矩阵到四元数的转换
 void rotMatrixToQuternion(Quaternion &q, rotMatrix &r)
 {
     double tr = r.m11 + r.m22 +r.m33;
@@ -59,3 +61,4 @@ void rotMatrixToQuternion(Quaternion &q, rotMatrix &r)
     }
 }
 
+#endif
