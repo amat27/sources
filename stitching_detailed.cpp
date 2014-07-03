@@ -57,17 +57,17 @@
 #include "opencv2/stitching/detail/warpers.hpp"
 #include "opencv2/stitching/warpers.hpp"
 
-//headfile for using sba functions
-#include <sba.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-#include <sba.h>
-#include "compiler.h"
-#include "demo/eucsbademo.h"
-#include "demo/readparams.h"
+////headfile for using sba functions
+//#include <sba.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <math.h>
+//
+//#include <sba.h>
+//#include "compiler.h"
+//#include "demo/eucsbademo.h"
+//#include "demo/readparams.h"
 
 #include "rotMatrixToQuternion.h"
 #include "debugFunctions.h"
@@ -483,8 +483,8 @@ int main(int argc, char* argv[])
 			f << matchesGraphAsStringPowerUpVer(img_names, pairwise_matches, conf_thresh,span_tree_edges);
 		}
 
-	    //draw mathes and push numpts3D
-		int numpts3D=0;/* number of points */
+	 //   //draw mathes and push numpts3D
+		//int numpts3D=0;/* number of points */
 		ofstream writeHomography("homographyRecord.txt");
 	    int id_of_pair=0;
 	    for(set<pair<int,int>>::iterator edgesit=span_tree_edges.begin();edgesit!=span_tree_edges.end();++edgesit)
@@ -493,8 +493,8 @@ int main(int argc, char* argv[])
 	    	int i=(*edgesit).first;
 	    	int j=(*edgesit).second;
 	    	int k=i*num_images+j;
-			numpts3D += pairwise_matches[k].num_inliers;
-			cout<<numpts3D<<" ";
+			//numpts3D += pairwise_matches[k].num_inliers;
+			//cout<<numpts3D<<" ";
 			if(draw_matchs){
 				stringstream s;
 	    		s << id_of_pair;
@@ -520,6 +520,7 @@ int main(int argc, char* argv[])
 
 	    }
     
+		need4drawmatch.clear();
 	
     // Leave only images we are sure are from the same panorama
     vector<int> indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
@@ -687,8 +688,8 @@ int main(int argc, char* argv[])
         masks[i].setTo(Scalar::all(255));
     }
 
+#if 1;
     // Warp images and their masks
-
     Ptr<WarperCreator> warper_creator;
 #if defined(HAVE_OPENCV_GPU) && !defined(ANDROID)
     if (try_gpu && gpu::getCudaEnabledDeviceCount() > 0)
@@ -743,11 +744,42 @@ int main(int argc, char* argv[])
     for (int i = 0; i < num_images; ++i)
 	{
         images_warped[i].convertTo(images_warped_f[i], CV_32F);
-		/*stringstream s;
+		stringstream s;
 		s << i;
 		string str = s.str();
-		imwrite("warpedf"+str+".jpg",images_warped_f[i]);*/
+		imwrite("warpedf"+str+".jpg",images_warped_f[i]);
 	}
+
+#else
+	//Ptr<WarperCreator> warper_creator;
+
+	Mat test(3,1,CV_32F,0);
+    Ptr<detail::PlaneWarper> Warper = new detail::PlaneWarper(static_cast<float>(warped_image_scale * seam_work_aspect));
+
+	for (int i = 0; i < num_images; ++i)
+	{
+		Mat_<float> K;
+		cameras[i].K().convertTo(K, CV_32F);
+		float swa = (float)seam_work_aspect;
+		K(0,0) *= swa; K(0,2) *= swa;
+		K(1,1) *= swa; K(1,2) *= swa;
+
+		corners[i] = Warper->warp(images[i], K, cameras[i].R, test, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
+		sizes[i] = images_warped[i].size();
+
+		Warper->warp(masks[i], K, cameras[i].R, cameras[i].t, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+	}
+
+	 vector<Mat> images_warped_f(num_images);
+	 for (int i = 0; i < num_images; ++i)
+		 images_warped[i].convertTo(images_warped_f[i], CV_32F);
+		
+	 delete Warper;
+	 Warper = NULL;
+
+#endif
+
+
 
     LOGLN("Warping images, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
 	writedown<<"Warping images, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec"<<endl;
@@ -828,6 +860,7 @@ int main(int argc, char* argv[])
             // Update warped image scale
             warped_image_scale *= static_cast<float>(compose_work_aspect);
             warper = warper_creator->create(warped_image_scale);
+			//Warper = new cv::detail::PlaneWarper(warped_image_scale);
 
             // Update corners and sizes
             for (int i = 0; i < num_images; ++i)
@@ -848,6 +881,7 @@ int main(int argc, char* argv[])
                 Mat K;
                 cameras[i].K().convertTo(K, CV_32F);
                 Rect roi = warper->warpRoi(sz, K, cameras[i].R);
+				//Rect roi = Warper->warpRoi(sz, K ,cameras[i].R,cameras[i].t);
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
@@ -864,11 +898,15 @@ int main(int argc, char* argv[])
 
         // Warp the current image
         warper->warp(img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+		//Warper->warp(img, K, cameras[img_idx].R,cameras[img_idx].t, INTER_LINEAR, BORDER_REFLECT, img_warped);
 
         // Warp the current image mask
         mask.create(img_size, CV_8U);
         mask.setTo(Scalar::all(255));
-        warper->warp(mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+		warper->warp(mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+		//Warper->warp(mask, K, cameras[img_idx].R, cameras[img_idx].t,INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+
+		
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);

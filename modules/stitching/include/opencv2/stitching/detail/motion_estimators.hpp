@@ -148,7 +148,7 @@ protected:
 class CV_EXPORTS BundleAdjusterReproj : public BundleAdjusterBase
 {
 public:
-    BundleAdjusterReproj() : BundleAdjusterBase(7, 2) {}//change from 2
+    BundleAdjusterReproj() : BundleAdjusterBase(10, 2) {}//change from 2
 
 private:
     void setUpInitialCameraParams(const std::vector<CameraParams> &cameras);
