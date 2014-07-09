@@ -71,6 +71,7 @@
 
 #include "rotMatrixToQuternion.h"
 #include "debugFunctions.h"
+#include "sbaStructures.h"
 
 using namespace std;
 using namespace cv;
@@ -153,7 +154,7 @@ string ba_cost_func = "reproj";
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
 string ba_refine_mask = "x____";
-int baittimes = 200;
+int baittimes = 20; //provide initial guess
 double bathresh = DBL_EPSILON; //should be DBL_EPSILON
 bool do_wave_correct = 0;
 WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
@@ -631,6 +632,23 @@ int main(int argc, char* argv[])
     if (ba_refine_mask[4] == 'x') refine_mask(1,2) = 1;
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
+
+	//get ready for sba
+	vector<Point3d> points; 
+	vector<vector<Point2d>> imagepoints; 
+	vector<vector<int>> visibility;
+	vector<Mat> cameraMatrix; 
+	vector<Mat> R; 
+	vector<Mat> T; 
+	vector<Mat> distCoeffs;
+
+	readParams(features, pairwise_matches, cameras, points, imagepoints, visibility, num_images, cameraMatrix, R, T, distCoeffs);
+
+
+	cout << (int)imagepoints.size() << "&" << visibility.size() << "&" << R.size() << "&" << T.size()<<"&"<<(int)cameraMatrix.size() << "&" << (int)distCoeffs.size();
+
+	cv::LevMarqSparse lms;
+	lms.bundleAdjust(points, imagepoints, visibility, cameraMatrix, R, T, distCoeffs);
 
 
 
