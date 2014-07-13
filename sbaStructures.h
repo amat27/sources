@@ -81,7 +81,10 @@ Point3d compute3Dpoints(Point2d origin, Mat cameraMatrix, Mat R, Mat T)
 	double y_ = R_(1, 0)*x + R_(1, 1)*y + R_(1, 2)*z;
 	double z_ = R_(2, 0)*x + R_(2, 1)*y + R_(2, 2)*z;
 
-	return Point3d(x_, y_, z_);
+	x = x_ / z_;
+	y = y_ / z_;
+
+	return Point3d(x, y, 1);
 }
 
 
@@ -244,6 +247,21 @@ void readCameraParams(CameraParams P, vector<Mat>& cameraMatrix, vector<Mat>& R,
 	T.push_back(T_);
 }
 
+void refineCameraParams(vector<CameraParams> cameras, const vector<Mat>& cameraMatrix, const vector<Mat>& R, const vector<Mat>& T)
+{
+	int n = (int)cameraMatrix.size();
+	for (int i = 0; i != n;++i)
+	{
+		cameras[i].focal = cameraMatrix[i].at<double>(0, 0);
+
+		cout << cameraMatrix[i].at<double>(0, 0) << endl;
+
+		cameras[i].ppx = cameraMatrix[i].at<double>(0, 2);
+		cameras[i].ppy = cameraMatrix[i].at<double>(1, 2);
+		cameras[i].R = R[i];
+		cameras[i].t = T[i];
+	}
+}
 
 void readParams(const vector<ImageFeatures> features, const vector<MatchesInfo> pairwise_matches, const vector<CameraParams> cameras,
 	vector<Point3d>& points, vector<vector<Point2d>>& imagepoints, vector<vector<int>>& visibility, int num_images,
@@ -261,6 +279,76 @@ void readParams(const vector<ImageFeatures> features, const vector<MatchesInfo> 
 	{
 		readPointsInOnePic(Mi, features, mask, points, imagepoints, visibility, num_images, cameraMatrix, R, T);
 	}
+}
+
+vector<vector<Mat>> aidup(vector <vector<Mat>> vv)
+{
+	//TODO;tans the vv
+	int n = (int) vv.size();
+	int m = (int) vv[0].size();
+
+	vector<vector<Mat>> uu(m, vector<Mat>(n));
+
+	for (int i = 0; i != n;++i)
+	{
+		for (int j = 0; j != m;++j)
+		{
+			uu[j][i] = vv[i][j];
+
+		}
+	}
+	return uu;
+}
+
+vector<vector<int>> aidup(vector <vector<int>> vv)
+{
+	//TODO;tans the vv
+	int n = (int)vv.size();
+	int m = (int)vv[0].size();
+
+	vector<vector<int>> uu(m, vector<int>(n));
+
+	for (int i = 0; i != n; ++i)
+	{
+		for (int j = 0; j != m; ++j)
+		{
+			uu[j][i] = vv[i][j];
+
+		}
+	}
+	return uu;
+}
+
+vector<vector<Point2d>> aidup(vector <vector<Point2d>> vv)
+{
+	//TODO;tans the vv
+	int n = (int)vv.size();
+	int m = (int)vv[0].size();
+
+	vector<vector<Point2d>> uu(m, vector<Point2d>(n));
+
+	for (int i = 0; i != n; ++i)
+	{
+		for (int j = 0; j != m; ++j)
+		{
+			uu[j][i] = vv[i][j];
+
+		}
+	}
+	return uu;
+}
+
+vector<int> visibility2vmask(vector<vector<int>> visibility)
+{
+	vector<int> vmask;
+	for (vector<int> a: visibility)
+	{
+		for (int b : a)
+		{
+			vmask.push_back(b);
+		}
+	}
+	return vmask;
 }
 
 

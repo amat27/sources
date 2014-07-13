@@ -643,14 +643,19 @@ int main(int argc, char* argv[])
 	vector<Mat> distCoeffs;
 
 	readParams(features, pairwise_matches, cameras, points, imagepoints, visibility, num_images, cameraMatrix, R, T, distCoeffs);
+	//imagepoints = aidup(imagepoints);
+	//visibility = aidup(visibility);
 
 
-	cout << (int)imagepoints.size() << "&" << visibility.size() << "&" << R.size() << "&" << T.size()<<"&"<<(int)cameraMatrix.size() << "&" << (int)distCoeffs.size();
+	vector<int> vmask = visibility2vmask(visibility);
+
+
+	cout << (int)imagepoints.size() << "&" << visibility.size() << "&" << R.size() << "&" << T.size()<<"&"<<(int)cameraMatrix.size() << "&" << (int)distCoeffs.size() << "&" << (int)vmask.size();
 
 	cv::LevMarqSparse lms;
 	lms.bundleAdjust(points, imagepoints, visibility, cameraMatrix, R, T, distCoeffs);
 
-
+	refineCameraParams(cameras, cameraMatrix, R, T);
 
 	{
 		string writeName="cams1.txt";
