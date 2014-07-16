@@ -58,16 +58,16 @@
 #include "opencv2/stitching/warpers.hpp"
 
 //headfile for using sba functions
-#include <sba.h>
+//#include <sba.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include <sba.h>
-#include "compiler.h"
-#include "demo/eucsbademo.h"
-#include "demo/readparams.h"
+//#include <sba.h>
+//#include "compiler.h"
+//#include "demo/eucsbademo.h"
+//#include "demo/readparams.h"
 
 #include "rotMatrixToQuternion.h"
 #include "debugFunctions.h"
