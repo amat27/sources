@@ -2,19 +2,21 @@
 
 Please read before starting making your project file.
 
-#### Q: I failed to build samples
+#### FAQ
+
+* Q: I failed to build samples
 
 Download the [origin OpenCV source code](http://opencv.org/) here, then copy "samples" folder to your project folder.
 
-#### Q: Can't find out which .cpp to run
+* Q: Can't find out which .cpp to run
 
 "stitching_detailed.cpp" in the root folder.
 
-#### Q: Shall I install my OpenCV dlls
+* Q: Shall I install my OpenCV dlls
 
 It will do something good but not necessary.
 
-#### Q: It doesn't work!
+* Q: It doesn't work!
 
 Try switching to master branch.
 

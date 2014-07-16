@@ -73,6 +73,8 @@
 #include "debugFunctions.h"
 #include "sbaStructures.h"
 
+
+
 using namespace std;
 using namespace cv;
 using namespace cv::detail;
@@ -154,7 +156,6 @@ string ba_cost_func = "reproj";
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
 string ba_refine_mask = "x____";
-int baittimes = 20; //provide initial guess
 double bathresh = DBL_EPSILON; //should be DBL_EPSILON
 bool do_wave_correct = 0;
 WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
@@ -168,6 +169,15 @@ int blend_type = Blender::MULTI_BAND;
 float blend_strength = 5;
 string result_name = "result.jpg";
 bool draw_matchs = 0;
+
+//if using sbaStructures
+bool SBA = false;
+
+#if SBA
+	int baittimes = 20; //provide initial guess;
+#else
+    int baittimes = 200;  //provide final params
+#endif
 
 ofstream writedown("output.txt");
 set<pair<int,int> > span_tree_edges;
@@ -633,6 +643,10 @@ int main(int argc, char* argv[])
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
 
+
+#endif
+
+#if SBA
 	//get ready for sba
 	vector<Point3d> points; 
 	vector<vector<Point2d>> imagepoints; 
