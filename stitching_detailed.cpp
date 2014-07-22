@@ -139,6 +139,12 @@ static void printUsage()
 }
 
 
+
+#define SBA 1; //if using sbaStructures
+#define TEST 1; //switch of test functions
+
+
+
 // Default command line args
 vector<string> img_names;
 bool preview = false;
@@ -170,8 +176,7 @@ float blend_strength = 5;
 string result_name = "result.jpg";
 bool draw_matchs = 0;
 
-//if using sbaStructures
-bool SBA = false;
+
 
 #if SBA
 	int baittimes = 20; //provide initial guess;
@@ -657,14 +662,18 @@ int main(int argc, char* argv[])
 	vector<Mat> distCoeffs;
 
 	readParams(features, pairwise_matches, cameras, points, imagepoints, visibility, num_images, cameraMatrix, R, T, distCoeffs);
-	//imagepoints = aidup(imagepoints);
-	//visibility = aidup(visibility);
+	imagepoints = aidup(imagepoints);
+	visibility = aidup(visibility);
+
+#if TEST
+	writePoints("Points0.txt", points);
+
+#endif
+
+	//vector<int> vmask = visibility2vmask(visibility);
 
 
-	vector<int> vmask = visibility2vmask(visibility);
-
-
-	cout << (int)imagepoints.size() << "&" << visibility.size() << "&" << R.size() << "&" << T.size()<<"&"<<(int)cameraMatrix.size() << "&" << (int)distCoeffs.size() << "&" << (int)vmask.size();
+	cout << (int)imagepoints.size() << "&" << visibility.size() << "&" << R.size() << "&" << T.size()<<"&"<<(int)cameraMatrix.size() << "&" << (int)distCoeffs.size()<<endl;
 
 	cv::LevMarqSparse lms;
 	lms.bundleAdjust(points, imagepoints, visibility, cameraMatrix, R, T, distCoeffs);
@@ -674,6 +683,7 @@ int main(int argc, char* argv[])
 	{
 		string writeName="cams1.txt";
 		writeCamParams(writeName,num_images,cameras);
+		writePoints("Points.txt", points);
 	}
 
 

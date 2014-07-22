@@ -8,6 +8,19 @@
 
 using namespace std;
 
+void writePoints(string writeName, vector<cv::Point3d> Points)
+{
+	int i = 0;
+	ofstream writePoints(writeName);
+	for (cv::Point3d pt:Points)
+	{
+		++i;
+		writePoints <<"Point No. "<<i<< " = ( " << pt.x << " , " << pt.y << " , " << pt.z << " )" << endl;
+
+	}
+}
+
+
 void writeCamParams(string writeName, int num_images, vector<cv::detail::CameraParams> cameras)
 {
 	ofstream writeCamParams(writeName);
