@@ -152,7 +152,7 @@ string ba_cost_func = "reproj";
 //<fx><skew><ppx><aspect><ppy>. The default mask is 'xxxxx'. If bundle
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
-string ba_refine_mask = "x____";
+string ba_refine_mask = "__x_x";
 int baittimes = 200;
 double bathresh = DBL_EPSILON; //should be DBL_EPSILON
 bool do_wave_correct = 0;
