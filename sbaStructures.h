@@ -105,24 +105,18 @@ void readPointsInOnePic(const MatchesInfo matchesinfo, const vector<ImageFeature
 		bool dst_exist = false;
 
 		//check if queryIdx and trainIdx exist in mask
-		if (!mask[src].empty())
-		{
-			for (auto idx_it = mask[src].begin(); idx_it != mask[src].end(); ++idx_it)
-			{
-				if (src_idx == idx_it->idx)
-				{
+		if (!mask[src].empty())	{
+			for (auto idx_it = mask[src].begin(); idx_it != mask[src].end(); ++idx_it){
+				if (src_idx == idx_it->idx){
 					src_exist = true;
 					break;
-				}}}
-		if (!mask[dst].empty())
-		{
-			for (auto idx_it = mask[dst].begin(); idx_it != mask[dst].end(); ++idx_it)
-			{
-				if (dst_idx == idx_it->idx)
-				{
+		}}}
+		if (!mask[dst].empty()){
+			for (auto idx_it = mask[dst].begin(); idx_it != mask[dst].end(); ++idx_it){
+				if (dst_idx == idx_it->idx){
 					dst_exist = true;
 					break;
-				}}}
+		}}}
 
 
 		if (src_exist && dst_exist)			src_dst = BOTH_EXIST;
@@ -155,20 +149,16 @@ void readPointsInOnePic(const MatchesInfo matchesinfo, const vector<ImageFeature
 			//push imagepoints
 			vector<Point2d> proj_points;
 			vector<int>     visib_points;
-			for (int i = 0; i != num_images;++i)
-			{
-				if (i == src)
-				{
+			for (int i = 0; i != num_images;++i){
+				if (i == src){
 					proj_points.push_back(features[src].keypoints[src_idx].pt);
 					visib_points.push_back(1);
 				}
-				else if (i == dst)
-				{
+				else if (i == dst){
 					proj_points.push_back(features[dst].keypoints[dst_idx].pt);
 					visib_points.push_back(1);
 				}
-				else
-				{
+				else{
 					proj_points.push_back(Point2d(-1, -1));
 					visib_points.push_back(0);
 				}
@@ -181,17 +171,13 @@ void readPointsInOnePic(const MatchesInfo matchesinfo, const vector<ImageFeature
 			//Point3d tmp_target;
 			//int k = 0;
 			//for (auto it_target = mask[src].begin(); it_target != mask[src].end;++it_target)
-			for (idx_target it_target : mask[src])
-			{
-				if (it_target.idx == src_idx)
-				{
+			for (idx_target it_target : mask[src]){
+				if (it_target.idx == src_idx){
 					tmp_target = it_target.target;
 					break;
-				}
-			}
+				}}
 			mask[dst].push_back(idx_target(dst_idx, tmp_target));
-			for (auto it = points.begin(); it != points.end();++it)
-			{
+			for (auto it = points.begin(); it != points.end();++it)	{
 				if (tmp_target.x == it->x && tmp_target.y == it->y && tmp_target.z == it->z)
 					++k;
 			}
@@ -204,32 +190,21 @@ void readPointsInOnePic(const MatchesInfo matchesinfo, const vector<ImageFeature
 		case DST_EXISTS:
 			//Point3d tmp_target;
 			//int k = 0;
-			for (idx_target it_target : mask[dst])
-			{
-				if (it_target.idx == dst_idx)
-				{
+			for (idx_target it_target : mask[dst]){
+				if (it_target.idx == dst_idx){
 					tmp_target = it_target.target;
 					break;
-				}
-			}
+				}}
 			mask[src].push_back(idx_target(src_idx, tmp_target));
-			for (auto it = points.begin(); it != points.end(); ++it)
-			{
+			for (auto it = points.begin(); it != points.end(); ++it){
 				if (tmp_target.x == it->x && tmp_target.y == it->y && tmp_target.z == it->z)
-					++k;
-			}
+					++k;}
 			imagepoints[k][src] = features[src].keypoints[src_idx].pt;
 			visibility[k][src] = 1;
 			break;
 		case BOTH_EXIST:
 			break;
-		}
-
-
-	}
-	
-			
-
+		}}
 }
 
 void readCameraParams(CameraParams P, vector<Mat>& cameraMatrix, vector<Mat>& R, vector<Mat>& T, vector<Mat>& distCoeffs)
@@ -250,8 +225,7 @@ void readCameraParams(CameraParams P, vector<Mat>& cameraMatrix, vector<Mat>& R,
 void refineCameraParams(vector<CameraParams> cameras, const vector<Mat>& cameraMatrix, const vector<Mat>& R, const vector<Mat>& T)
 {
 	int n = (int)cameraMatrix.size();
-	for (int i = 0; i != n;++i)
-	{
+	for (int i = 0; i != n;++i){
 		cameras[i].focal = cameraMatrix[i].at<double>(0, 0);
 
 		cout << cameraMatrix[i].at<double>(0, 0) << endl;
@@ -268,15 +242,13 @@ void readParams(const vector<ImageFeatures> features, const vector<MatchesInfo> 
 	vector<Mat>& cameraMatrix, vector<Mat>& R, vector<Mat>& T, vector<Mat>& distCoeffs)
 {
 	//read camera params
-	for (CameraParams Cp : cameras)
-	{
+	for (CameraParams Cp : cameras){
 		readCameraParams(Cp, cameraMatrix, R, T, distCoeffs);
 	}
 
 	//read points
 	vector <vector<idx_target>> mask(num_images);
-	for (MatchesInfo Mi : pairwise_matches)
-	{
+	for (MatchesInfo Mi : pairwise_matches){
 		readPointsInOnePic(Mi, features, mask, points, imagepoints, visibility, num_images, cameraMatrix, R, T);
 	}
 }
@@ -289,12 +261,9 @@ vector<vector<Mat>> aidup(vector <vector<Mat>> vv)
 
 	vector<vector<Mat>> uu(m, vector<Mat>(n));
 
-	for (int i = 0; i != n;++i)
-	{
-		for (int j = 0; j != m;++j)
-		{
+	for (int i = 0; i != n;++i){
+		for (int j = 0; j != m;++j){
 			uu[j][i] = vv[i][j];
-
 		}
 	}
 	return uu;
@@ -308,12 +277,9 @@ vector<vector<int>> aidup(vector <vector<int>> vv)
 
 	vector<vector<int>> uu(m, vector<int>(n));
 
-	for (int i = 0; i != n; ++i)
-	{
-		for (int j = 0; j != m; ++j)
-		{
+	for (int i = 0; i != n; ++i){
+		for (int j = 0; j != m; ++j){
 			uu[j][i] = vv[i][j];
-
 		}
 	}
 	return uu;
@@ -327,12 +293,9 @@ vector<vector<Point2d>> aidup(vector <vector<Point2d>> vv)
 
 	vector<vector<Point2d>> uu(m, vector<Point2d>(n));
 
-	for (int i = 0; i != n; ++i)
-	{
-		for (int j = 0; j != m; ++j)
-		{
+	for (int i = 0; i != n; ++i){
+		for (int j = 0; j != m; ++j){
 			uu[j][i] = vv[i][j];
-
 		}
 	}
 	return uu;
@@ -341,10 +304,8 @@ vector<vector<Point2d>> aidup(vector <vector<Point2d>> vv)
 vector<int> visibility2vmask(vector<vector<int>> visibility)
 {
 	vector<int> vmask;
-	for (vector<int> a: visibility)
-	{
-		for (int b : a)
-		{
+	for (vector<int> a: visibility){
+		for (int b : a){
 			vmask.push_back(b);
 		}
 	}
