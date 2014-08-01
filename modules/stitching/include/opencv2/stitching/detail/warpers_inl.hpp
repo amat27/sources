@@ -227,7 +227,7 @@ void PlaneProjector::mapBackward(float u, float v, float &x, float &y)
     float z;
     x = k_rinv[0] * u + k_rinv[1] * v + k_rinv[2] * (1 - t[2]);
     y = k_rinv[3] * u + k_rinv[4] * v + k_rinv[5] * (1 - t[2]);
-    z = k_rinv[6] * u + k_rinv[7] * v + k_rinv[8] * (1 - t[2]);
+    z = k_rinv[6] * u + k_rinv[7] * v + k_rinv[8] * (1 - t[2])/* 1*/;
 
     x /= z;
     y /= z;

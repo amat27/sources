@@ -54,6 +54,7 @@ void ProjectorBase::setCameraParams(const Mat &K, const Mat &R, const Mat &T)
     CV_Assert((T.size() == Size(1, 3) || T.size() == Size(3, 1)) && T.type() == CV_32F);
 
     Mat_<float> K_(K);
+
     k[0] = K_(0,0); k[1] = K_(0,1); k[2] = K_(0,2);
     k[3] = K_(1,0); k[4] = K_(1,1); k[5] = K_(1,2);
     k[6] = K_(2,0); k[7] = K_(2,1); k[8] = K_(2,2);

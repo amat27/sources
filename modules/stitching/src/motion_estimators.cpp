@@ -40,6 +40,12 @@
 //
 //M*/
 
+
+#define DEFAULT 0;
+#define GEO 0;
+#define EXP 0;
+
+
 #include "precomp.hpp"
 #include <fstream>
 #include <iostream>
@@ -407,7 +413,7 @@ void BundleAdjusterReproj::calcError(Mat &err)
         K2(0,0) = f2; K2(0,2) = ppx2;
         K2(1,1) = f2*a2; K2(1,2) = ppy2;
 
-#if 0
+#if DEFAULT
 		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
 		
 		for (size_t k = 0; k < matches_info.matches.size(); ++k)
@@ -425,34 +431,34 @@ void BundleAdjusterReproj::calcError(Mat &err)
             err.at<double>(2 * match_idx, 0) = p2.x - x/z;
             err.at<double>(2 * match_idx + 1, 0) = p2.y - y/z;
 
-//#else
-		//Mat_<double> H1 = R1_ * K1.inv();
-		//Mat_<double> H2 = R2_ * K2.inv();
-		//
-		//for (size_t k = 0; k < matches_info.matches.size(); ++k)
-  //      {
-  //          if (!matches_info.inliers_mask[k])
-  //              continue;
+#elif EXP
+		Mat_<double> H1 = R1_ * K1.inv();
+		Mat_<double> H2 = R2_ * K2.inv();
+		
+		for (size_t k = 0; k < matches_info.matches.size(); ++k)
+        {
+            if (!matches_info.inliers_mask[k])
+                continue;
 
-  //          const DMatch& m = matches_info.matches[k];
-  //          Point2f p1 = features1.keypoints[m.queryIdx].pt;
-  //          Point2f p2 = features2.keypoints[m.trainIdx].pt;
+            const DMatch& m = matches_info.matches[k];
+            Point2f p1 = features1.keypoints[m.queryIdx].pt;
+            Point2f p2 = features2.keypoints[m.trainIdx].pt;
 
-  //          double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
-  //          double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
-  //          double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
+            double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
+            double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
+            double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
 
-		//	double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
-  //          double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
-		//	double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
+			double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
+            double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
+			double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
 
-		//	double mult= sqrt (f1 * f2);
-		//	//double mult = mult1;//(6000>mult1? 6000:mult1);
-  //          err.at<double>(2 * match_idx, 0) = mult *( x2/z2 - x1/z1)*( x2/z2 - x1/z1);
-  //          err.at<double>(2 * match_idx + 1, 0) = mult *(y2/z2 - y1/z1)*(y2/z2 - y1/z1);
+			double mult= sqrt (f1 * f2);
+			//double mult = mult1;//(6000>mult1? 6000:mult1);
+            err.at<double>(2 * match_idx, 0) = mult *( x2/z2 - x1/z1)*( x2/z2 - x1/z1);
+            err.at<double>(2 * match_idx + 1, 0) = mult *(y2/z2 - y1/z1)*(y2/z2 - y1/z1);
 
 
-#else
+#elif GEO
 		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
 		Mat_<double> Hinv = H.inv();
 
@@ -481,6 +487,31 @@ void BundleAdjusterReproj::calcError(Mat &err)
 			b = p1.y - y / z;
 
 			err.at<double>(2 * match_idx + 1, 0) = sqrt(a*a + b*b);
+#else
+		Mat_<double> H1 = R1_ * K1.inv();
+		Mat_<double> H2 = R2_ * K2.inv();
+
+		for (size_t k = 0; k < matches_info.matches.size(); ++k)
+		{
+			if (!matches_info.inliers_mask[k])
+				continue;
+
+			const DMatch& m = matches_info.matches[k];
+			Point2f p1 = features1.keypoints[m.queryIdx].pt;
+			Point2f p2 = features2.keypoints[m.trainIdx].pt;
+
+			double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
+			double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
+			double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
+
+			double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
+			double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
+			double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
+
+			double mult= sqrt (f1 * f2);
+			
+			err.at<double>(2 * match_idx, 0) = mult * sqrt((x2 / z2 - x1 / z1)*(x2 / z2 - x1 / z1) + (y2 / z2 - y1 / z1)*(y2 / z2 - y1 / z1));
+			err.at<double>(2 * match_idx + 1, 0) =mult * fabs(z1-1.0)+fabs(z2-1.0);
 
 
 #endif

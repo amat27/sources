@@ -71,6 +71,7 @@
 
 #include "rotMatrixToQuternion.h"
 #include "debugFunctions.h"
+#include "sbaStructures.h"
 
 using namespace std;
 using namespace cv;
@@ -152,7 +153,7 @@ string ba_cost_func = "reproj";
 //<fx><skew><ppx><aspect><ppy>. The default mask is 'xxxxx'. If bundle
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
-string ba_refine_mask = "__x_x";
+string ba_refine_mask = "x_x_x";
 int baittimes = 200;
 double bathresh = DBL_EPSILON; //should be DBL_EPSILON
 bool do_wave_correct = 0;
@@ -163,7 +164,7 @@ string warp_type = "plane";
 int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
 float match_conf = 0.65f;
 string seam_find_type = "gc_color";
-int blend_type = Blender::MULTI_BAND;
+int blend_type = Blender::NO;
 float blend_strength = 5;
 string result_name = "result.jpg";
 bool draw_matchs = 0;
@@ -631,8 +632,24 @@ int main(int argc, char* argv[])
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
 
+	//write 3d points infomation down
+	vector<Point3d> Points;
+	vector<vector<Point2d>> imagepoints;
+	vector<vector<int>> visibility;
+	vector<Mat> cameraMatrix;
+	vector<Mat> R;
+	vector<Mat> T;
+	vector<Mat> distCoeffs;
 
-
+	readParams(features, pairwise_matches, cameras, Points, imagepoints, visibility, num_images, cameraMatrix, R, T, distCoeffs);
+	
+	ofstream writePoints("Points.txt");
+	writePoints << "Pts (X, Y, Z)" << endl;
+	for (Point3d a : Points)
+	{
+		writePoints << "(" << a.x << ", " << a.y << ", " << a.z << ")"<<endl;
+	}
+	
 	{
 		string writeName="cams1.txt";
 		writeCamParams(writeName,num_images,cameras);
