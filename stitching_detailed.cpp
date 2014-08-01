@@ -142,6 +142,7 @@ static void printUsage()
 
 #define SBA 1; //if using sbaStructures
 #define TEST 1; //switch of test functions
+#define OPENCVSBA 1;//if using ba.cpp
 
 
 
@@ -168,17 +169,17 @@ WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 bool save_graph = 0;
 std::string save_graph_to = "matchp.txt";
 string warp_type = "plane";
-int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+int expos_comp_type = ExposureCompensator::NO;
 float match_conf = 0.65f;
-string seam_find_type = "gc_color";
-int blend_type = Blender::MULTI_BAND;
+string seam_find_type = "no";
+int blend_type = Blender::NO;
 float blend_strength = 5;
 string result_name = "result.jpg";
 bool draw_matchs = 0;
 
 
 
-#if SBA
+#if OPENCVSBA
 	int baittimes = 20; //provide initial guess;
 #else
     int baittimes = 200;  //provide final params
@@ -619,12 +620,6 @@ int main(int argc, char* argv[])
 	//	writeCamParams<<cameras[i].t.at<double>(0)<<" "<<cameras[i].t.at<double>(1)<<" "<<cameras[i].t.at<double>(2)<<endl;
 	//}
 
-	
-	{
-		string writeName="cams.txt";
-		writeCamParams(writeName,num_images,cameras);
-	}
-
 #if 0
 	//int n=sba_mot_levmar_x(numpts3D,0,num_images,0,;
 
@@ -648,6 +643,10 @@ int main(int argc, char* argv[])
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
 
+	{
+		string writeName = "cams.txt";
+		writeCamParams(writeName, num_images, cameras);
+	}
 
 #endif
 
@@ -670,6 +669,7 @@ int main(int argc, char* argv[])
 
 #endif
 
+#if OPENCVSBA
 	//vector<int> vmask = visibility2vmask(visibility);
 
 
@@ -686,7 +686,7 @@ int main(int argc, char* argv[])
 		writePoints("Points.txt", points);
 	}
 
-
+#endif
 #endif
 
     // Find median focal length
@@ -735,7 +735,7 @@ int main(int argc, char* argv[])
         masks[i].setTo(Scalar::all(255));
     }
 
-#if 1;
+#if 0;
     // Warp images and their masks
     Ptr<WarperCreator> warper_creator;
 #if defined(HAVE_OPENCV_GPU) && !defined(ANDROID)
@@ -811,10 +811,10 @@ int main(int argc, char* argv[])
 		K(0,0) *= swa; K(0,2) *= swa;
 		K(1,1) *= swa; K(1,2) *= swa;
 
-		corners[i] = Warper->warp(images[i], K, cameras[i].R, test, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
+		corners[i] = Warper->warp(images[i], K, cameras[i].R, cameras[i].t.t(), INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
 		sizes[i] = images_warped[i].size();
 
-		Warper->warp(masks[i], K, cameras[i].R, cameras[i].t, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+		Warper->warp(masks[i], K, cameras[i].R, cameras[i].t.t(), INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
 	}
 
 	 vector<Mat> images_warped_f(num_images);
@@ -822,7 +822,7 @@ int main(int argc, char* argv[])
 		 images_warped[i].convertTo(images_warped_f[i], CV_32F);
 		
 	 delete Warper;
-	 Warper = NULL;
+	 /*Warper = NULL;*/
 
 #endif
 
@@ -906,8 +906,9 @@ int main(int argc, char* argv[])
 
             // Update warped image scale
             warped_image_scale *= static_cast<float>(compose_work_aspect);
-            warper = warper_creator->create(warped_image_scale);
-			//Warper = new cv::detail::PlaneWarper(warped_image_scale);
+            /*warper = warper_creator->create(warped_image_scale);*/
+			cout << warped_image_scale;
+			Warper = new cv::detail::PlaneWarper(warped_image_scale);
 
             // Update corners and sizes
             for (int i = 0; i < num_images; ++i)
@@ -927,8 +928,8 @@ int main(int argc, char* argv[])
 
                 Mat K;
                 cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, cameras[i].R);
-				//Rect roi = Warper->warpRoi(sz, K ,cameras[i].R,cameras[i].t);
+                /*Rect roi = warper->warpRoi(sz, K, cameras[i].R);*/
+				Rect roi = Warper->warpRoi(sz, K ,cameras[i].R,cameras[i].t.t());
                 corners[i] = roi.tl();
                 sizes[i] = roi.size();
             }
@@ -944,16 +945,16 @@ int main(int argc, char* argv[])
         cameras[img_idx].K().convertTo(K, CV_32F);
 
         // Warp the current image
-        warper->warp(img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
-		//Warper->warp(img, K, cameras[img_idx].R,cameras[img_idx].t, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        /*warper->warp(img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);*/
+		Warper->warp(img, K, cameras[img_idx].R,cameras[img_idx].t.t(), INTER_LINEAR, BORDER_REFLECT, img_warped);
 
         // Warp the current image mask
         mask.create(img_size, CV_8U);
         mask.setTo(Scalar::all(255));
-		warper->warp(mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
-		//Warper->warp(mask, K, cameras[img_idx].R, cameras[img_idx].t,INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+		/*warper->warp(mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);*/
+		Warper->warp(mask, K, cameras[img_idx].R, cameras[img_idx].t.t(),INTER_NEAREST, BORDER_CONSTANT, mask_warped);
 
-		
+		delete Warper;
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);

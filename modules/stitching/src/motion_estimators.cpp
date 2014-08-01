@@ -511,8 +511,8 @@ void BundleAdjusterReproj::calcError(Mat &err)
 
 			double mult= sqrt (f1 * f2);
 			//double mult = mult1;//(6000>mult1? 6000:mult1);
-            err.at<double>(2 * match_idx    , 0) = mult *(x2_/z2_ - x1_/z1_)*(x2_/z2_ - x1_/z1_);
-            err.at<double>(2 * match_idx + 1, 0) = mult *(y2_/z2_ - y1_/z1_)*(y2_/z2_ - y1_/z1_);
+			err.at<double>(2 * match_idx, 0) = mult* mult *((x2_ - x1_)*(x2_ - x1_) + (y2_ - y1_)*(y2_ - y1_) + (z2_ - z1_)*(z2_ - z1_));
+            err.at<double>(2 * match_idx + 1, 0) = 0;
 
 
 //#else

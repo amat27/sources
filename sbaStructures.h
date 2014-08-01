@@ -81,10 +81,10 @@ Point3d compute3Dpoints(Point2d origin, Mat cameraMatrix, Mat R, Mat T)
 	double y_ = R_(1, 0)*x + R_(1, 1)*y + R_(1, 2)*z;
 	double z_ = R_(2, 0)*x + R_(2, 1)*y + R_(2, 2)*z;
 
-	x = x_ / z_;
-	y = y_ / z_;
+	/*x = x_ / z_;
+	y = y_ / z_;*/
 
-	return Point3d(x, y, 1);
+	return Point3d(x_, y_, z_);
 }
 
 
