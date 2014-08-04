@@ -140,9 +140,9 @@ static void printUsage()
 
 
 
-#define SBA 1; //if using sbaStructures
-#define TEST 1; //switch of test functions
-#define OPENCVSBA 1;//if using ba.cpp
+#define SBA 0; //if using sbaStructures
+#define TEST 0; //switch of test functions
+#define OPENCVSBA 0;//if using ba.cpp
 
 
 
@@ -643,10 +643,10 @@ int main(int argc, char* argv[])
     adjuster->setRefinementMask(refine_mask);
     (*adjuster)(features, pairwise_matches, cameras);
 
-	{
+	/*{
 		string writeName = "cams.txt";
 		writeCamParams(writeName, num_images, cameras);
-	}
+	}*/
 
 #endif
 
@@ -818,10 +818,19 @@ int main(int argc, char* argv[])
 	}
 
 	 vector<Mat> images_warped_f(num_images);
+	 //for (int i = 0; i < num_images; ++i)
+		// images_warped[i].convertTo(images_warped_f[i], CV_32F);
+
 	 for (int i = 0; i < num_images; ++i)
+	 {
 		 images_warped[i].convertTo(images_warped_f[i], CV_32F);
+		 stringstream s;
+		 s << i;
+		 string str = s.str();
+		 imwrite("warpedf" + str + ".jpg", images_warped_f[i]);
+	 }
 		
-	 delete Warper;
+ 	 delete Warper;
 	 /*Warper = NULL;*/
 
 #endif
