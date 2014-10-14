@@ -152,7 +152,7 @@ string ba_cost_func = "reproj";
 //<fx><skew><ppx><aspect><ppy>. The default mask is 'xxxxx'. If bundle
 //adjustment doesn't support estimation of selected parameter then
 //the respective flag is ignored.
-string ba_refine_mask = "__x_x";
+string ba_refine_mask = "x_x_x";
 int baittimes = 200;
 double bathresh = DBL_EPSILON; //should be DBL_EPSILON
 bool do_wave_correct = 0;
@@ -160,10 +160,10 @@ WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 bool save_graph = 0;
 std::string save_graph_to = "matchp.txt";
 string warp_type = "plane";
-int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
+int expos_comp_type = ExposureCompensator::NO;
 float match_conf = 0.65f;
 string seam_find_type = "gc_color";
-int blend_type = Blender::MULTI_BAND;
+int blend_type = Blender::NO;
 float blend_strength = 5;
 string result_name = "result.jpg";
 bool draw_matchs = 0;
