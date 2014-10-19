@@ -45,9 +45,6 @@ namespace TJCAD
 
 	};
 
-
-
-
 	class image
 	{
 	public:
