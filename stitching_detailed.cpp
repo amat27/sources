@@ -165,7 +165,7 @@ float match_conf = 0.65f;
 string seam_find_type = "gc_color";
 int blend_type = Blender::MULTI_BAND;
 float blend_strength = 5;
-string result_name = "result.jpg";
+string result_name = "result.tif";
 bool draw_matchs = 0;
 
 ofstream writedown("output.txt");
@@ -434,6 +434,7 @@ int main(int argc, char* argv[])
                 work_scale = min(1.0, sqrt(work_megapix * 1e6 / full_img.size().area()));
                 is_work_scale_set = true;
             }
+			//full_img = imread(img_names[i], -1);//test
             resize(full_img, img, Size(), work_scale, work_scale);
         }
         if (!is_seam_scale_set)
@@ -447,7 +448,7 @@ int main(int argc, char* argv[])
         features[i].img_idx = i;
         LOGLN("Features in image #" << i+1 << ": " << features[i].keypoints.size());
 		writedown<<"Features in image #" << i+1 << ": " << features[i].keypoints.size()<<endl;
-
+		//full_img = imread(img_names[i], -1);//test
         resize(full_img, img, Size(), seam_scale, seam_scale);
         images[i] = img.clone();
     }
