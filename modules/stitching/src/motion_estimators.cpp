@@ -407,7 +407,7 @@ void BundleAdjusterReproj::calcError(Mat &err)
         K2(0,0) = f2; K2(0,2) = ppx2;
         K2(1,1) = f2*a2; K2(1,2) = ppy2;
 
-#if 1
+#if 0
 		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
 		
 		for (size_t k = 0; k < matches_info.matches.size(); ++k)
