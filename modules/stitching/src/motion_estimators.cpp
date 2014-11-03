@@ -398,7 +398,7 @@ void BundleAdjusterReproj::calcError(Mat &err)
 		/*Mat_<double> tp = Mat::eye(3,3,CV_64F);*/
 		Mat_<double> R = R1_ - R2_.inv()/* - tp*/;
 		//const CvArr dotR = &R;
-		double tpR = determinant(R);
+		//double tpR = determinant(R);
 		
         const ImageFeatures& features1 = features_[i];
         const ImageFeatures& features2 = features_[j];
@@ -430,52 +430,52 @@ void BundleAdjusterReproj::calcError(Mat &err)
             err.at<double>(2 * match_idx, 0) = p2.x - x/z;
             err.at<double>(2 * match_idx + 1, 0) = p2.y - y/z;
 
-// #else
-// 		Mat_<double> H1 = R1_ * K1.inv();
-// 		Mat_<double> H2 = R2_ * K2.inv();
-// 		
-// 		for (size_t k = 0; k < matches_info.matches.size(); ++k)
-//         {
-//             if (!matches_info.inliers_mask[k])
-//                 continue;
-// 
-//             const DMatch& m = matches_info.matches[k];
-//             Point2f p1 = features1.keypoints[m.queryIdx].pt;
-//             Point2f p2 = features2.keypoints[m.trainIdx].pt;
-// 
-//             double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
-//             double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
-//             double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
-// 
-// 			double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
-//             double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
-// 			double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
-// 
-// 			double mult= sqrt (f1 * f2);
-// 			//double mult = mult1;//(6000>mult1? 6000:mult1);
-//             err.at<double>(2 * match_idx, 0) = mult *( x2/z2 - x1/z1)*( x2/z2 - x1/z1);
-//             err.at<double>(2 * match_idx + 1, 0) = mult *(y2/z2 - y1/z1)*(y2/z2 - y1/z1);
-
-
 #else
-		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
-
+		Mat_<double> H1 = /*R1_ **/ K1.inv();
+		Mat_<double> H2 = /*R2_ **/ K2.inv();
+		
 		for (size_t k = 0; k < matches_info.matches.size(); ++k)
-		{
-			if (!matches_info.inliers_mask[k])
-				continue;
+        {
+            if (!matches_info.inliers_mask[k])
+                continue;
 
-			const DMatch& m = matches_info.matches[k];
-			Point2f p1 = features1.keypoints[m.queryIdx].pt;
-			Point2f p2 = features2.keypoints[m.trainIdx].pt;
-			double x = H(0,0)*p1.x + H(0,1)*p1.y + H(0,2);
-			double y = H(1,0)*p1.x + H(1,1)*p1.y + H(1,2);
-			double z = H(2,0)*p1.x + H(2,1)*p1.y + H(2,2);
+            const DMatch& m = matches_info.matches[k];
+            Point2f p1 = features1.keypoints[m.queryIdx].pt;
+            Point2f p2 = features2.keypoints[m.trainIdx].pt;
 
-			
-			//cout << tpR << endl;
-			err.at<double>(2 * match_idx, 0) = sqrt((p2.x - x / z) * (p2.x - x / z) + (p2.y - y / z) * (p2.y - y / z)) + 1e16 * sqrt(tpR * tpR);
-			err.at<double>(2 * match_idx + 1, 0) = 0 ;
+            double x1 = H1(0,0)*p1.x + H1(0,1)*p1.y + H1(0,2);
+            double y1 = H1(1,0)*p1.x + H1(1,1)*p1.y + H1(1,2);
+            double z1 = H1(2,0)*p1.x + H1(2,1)*p1.y + H1(2,2);
+
+			double x2 = H2(0,0)*p2.x + H2(0,1)*p2.y + H2(0,2);
+            double y2 = H2(1,0)*p2.x + H2(1,1)*p2.y + H2(1,2);
+			double z2 = H2(2,0)*p2.x + H2(2,1)*p2.y + H2(2,2);
+
+			double mult= f1 * f2;
+			//double mult = mult1;//(6000>mult1? 6000:mult1);
+            err.at<double>(2 * match_idx, 0) = mult *( x2/z2 - x1/z1)*( x2/z2 - x1/z1);
+            err.at<double>(2 * match_idx + 1, 0) = mult *(y2/z2 - y1/z1)*(y2/z2 - y1/z1);
+
+
+// #else
+// 		Mat_<double> H = K2 * R2_.inv() * R1_ * K1.inv();
+// 
+// 		for (size_t k = 0; k < matches_info.matches.size(); ++k)
+// 		{
+// 			if (!matches_info.inliers_mask[k])
+// 				continue;
+// 
+// 			const DMatch& m = matches_info.matches[k];
+// 			Point2f p1 = features1.keypoints[m.queryIdx].pt;
+// 			Point2f p2 = features2.keypoints[m.trainIdx].pt;
+// 			double x = H(0,0)*p1.x + H(0,1)*p1.y + H(0,2);
+// 			double y = H(1,0)*p1.x + H(1,1)*p1.y + H(1,2);
+// 			double z = H(2,0)*p1.x + H(2,1)*p1.y + H(2,2);
+// 
+// 			
+// 			//cout << tpR << endl;
+// 			err.at<double>(2 * match_idx, 0) = sqrt((p2.x - x / z) * (p2.x - x / z) + (p2.y - y / z) * (p2.y - y / z)) + 1e16 * sqrt(tpR * tpR);
+// 			err.at<double>(2 * match_idx + 1, 0) = 0 ;
 
 
 #endif

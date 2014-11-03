@@ -165,7 +165,7 @@ float match_conf = 0.65f;
 string seam_find_type = "gc_color";
 int blend_type = Blender::MULTI_BAND;
 float blend_strength = 5;
-string result_name = "result.tif";
+string result_name = "result.jpg";
 bool draw_matchs = 0;
 
 ofstream writedown("output.txt");
