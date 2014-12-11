@@ -85,8 +85,8 @@ double distance(int i, int j, int center[2])
 
 void corp(string filename)
 {
-	string temp("E:\\stitching\\warped\\");
-	Mat img = imread( temp+ filename + ".tif");
+	string temp("E:\\stitching\\warped\\APAP\\");
+	Mat img = imread( temp+ filename + ".jpg");
 	//cout << img.channels() << endl;
 	Mat_<Vec3b> img_ = img;
 
@@ -151,7 +151,8 @@ void corp(string filename)
 	Rrow.end = (bottonleft[0] < bottonright[0]) ? bottonleft[0] : bottonright[0];
 	Rcol.start = (upperleft[1] > bottonleft[1]) ? upperleft[1] : bottonleft[1];
 	Rcol.end = (upperright[1] < bottonright[1]) ? upperright[1] : bottonright[1];
-
+	
+	Rrow.start += 8;
 	// 	Rrow.start = 0;
 	// 	Rrow.end = img.rows;
 	// 	Rcol.start = 0;
