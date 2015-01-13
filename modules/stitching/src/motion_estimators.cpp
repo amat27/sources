@@ -238,8 +238,8 @@ void BundleAdjusterBase::estimate(const vector<ImageFeatures> &features,
 		
 		for (int i = 0; i < num_images_; ++i)
         {
-			debug<<"No."<<it<<" "<<"pic"<<i<<" "<<"focal length="<<showtempdata.at<double>(i*num_params_per_cam_,0)<<endl;
-			cout<<"No."<<it<<" "<<"pic"<<i<<" "<<"focal length="<<showtempdata.at<double>(i*num_params_per_cam_,0)<<endl;
+			debug << "No." << it << " " << "pic" << i << " " << "focal length=" << showtempdata.at<double>(i*num_params_per_cam_, 0) << ", aspect=" << showtempdata.at<double>(i*num_params_per_cam_ + 3, 0) << endl;
+			cout << "No." << it << " " << "pic" << i << " " << "focal length=" << showtempdata.at<double>(i*num_params_per_cam_, 0) << ", aspect=" << showtempdata.at<double>(i*num_params_per_cam_ + 3, 0) << endl;
 		}
 
 		
@@ -427,8 +427,8 @@ void BundleAdjusterReproj::calcError(Mat &err)
             double y = H(1,0)*p1.x + H(1,1)*p1.y + H(1,2);
             double z = H(2,0)*p1.x + H(2,1)*p1.y + H(2,2);
 
-            err.at<double>(2 * match_idx, 0) = p2.x - x/z;
-            err.at<double>(2 * match_idx + 1, 0) = p2.y - y/z;
+			err.at<double>(2 * match_idx, 0) = (p2.x - x / z) + sqrt((a1 + a2 - 2) * (a1 + a2 - 2))/2;
+			err.at<double>(2 * match_idx + 1, 0) = p2.y - y / z + sqrt((a1 + a2 - 2) * (a1 + a2 - 2))/2;
 
 #else
 		Mat_<double> H1 = /*R1_ **/ K1.inv();
